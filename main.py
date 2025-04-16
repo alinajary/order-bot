@@ -24,7 +24,7 @@ ADMIN_ID = 156878195  # Replace with your Telegram user ID
 MENU_FILE = "menu.txt"
 
 # === States ===
-CHOOSING_FOOD, CHOOSING_QUANTITY, CHOOSING_DELIVERY, GETTING_NAME, GETTING_ADDRESS = range(5)
+CHOOSING_FOOD, CHOOSING_QUANTITY, CHOOSING_DELIVERY, GETTING_NAME, GETIING_TEL_NUM, GETTING_ADDRESS, CHOOSING_DATETIME = range(7)
 
 if sys.platform.startswith('win') and sys.version_info >= (3, 8):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -104,48 +104,85 @@ async def choose_delivery(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # === Get Name ===
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["name"] = update.message.text
+    await update.message.reply_text("📍 لطفاً شماره تماس خود را وارد کنید:")
+    return GETIING_TEL_NUM
+
+async def get_telephone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["telephone"] = update.message.text
     await update.message.reply_text("📍 لطفاً آدرس تحویل را وارد کنید:")
     return GETTING_ADDRESS
-
 # === Get Address + Save ===
 async def get_address(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["address"] = update.message.text
+    await update.message.reply_text("📅 لطفاً تاریخ و زمان تحویل را وارد کنید (مثال: 1402/02/01 ساعت 14:00):")
+    return CHOOSING_DATETIME
 
+# === Get Date and Time ===
+async def get_datetime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["datetime"] = update.message.text
+
+    # Generate order number
+    counter_file = "order_counter.txt"
+    if not os.path.exists(counter_file):
+        with open(counter_file, "w") as f:
+            f.write("101")  # Initialize the counter
+
+    with open(counter_file, "r") as f:
+        order_number = int(f.read().strip())
+
+    # Increment and save the new order number
+    with open(counter_file, "w") as f:
+        f.write(str(order_number + 1))
+
+    # Save order to CSV
     with open("orders.csv", "a", newline='', encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow([
+            order_number,  # Add order number
             update.message.from_user.username or "",
             context.user_data["name"],
             context.user_data["address"],
             context.user_data["food"],
             context.user_data["quantity"],
-            context.user_data["delivery"]
+            context.user_data["delivery"],
+            context.user_data["datetime"],  # Save date and time
+            "pending"  # Default state
         ])
 
+    # Notify Admin
     admin_msg = (
-        f"📦 سفارش جدید:\n"
+        f"📦 سفارش جدید (شماره سفارش: {order_number}):\n"
         f"👤 @{update.message.from_user.username or 'بدون نام'}\n"
         f"👤 نام: {context.user_data['name']}\n"
         f"📍 آدرس: {context.user_data['address']}\n"
         f"🍽 غذا: {context.user_data['food']}\n"
         f"🔢 تعداد: {context.user_data['quantity']}\n"
-        f"🚚 تحویل: {context.user_data['delivery']}"
+        f"🚚 تحویل: {context.user_data['delivery']}\n"
+        f"📅 تاریخ و زمان: {context.user_data['datetime']}\n"
+        f"📌 وضعیت: pending"
     )
     await context.bot.send_message(chat_id=ADMIN_ID, text=admin_msg)
 
+    # Send Confirmation to User
     summary = (
         f"✅ *سفارش شما ثبت شد!*\n\n"
+        f"📦 *شماره سفارش:* {order_number}\n"
         f"🍽 {context.user_data['food']}\n"
         f"🔢 تعداد: {context.user_data['quantity']}\n"
         f"📍 آدرس: {context.user_data['address']}\n"
+        f"📅 تاریخ و زمان: {context.user_data['datetime']}\n"
+        f"📌 وضعیت: pending\n"
         f"🙏 با تشکر!"
     )
     await update.message.reply_text(summary, parse_mode="Markdown")
     return ConversationHandler.END
-
 # === Cancel ===
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("❌ سفارش لغو شد.")
+# Clear user data
+    context.user_data.clear()
+
+    # Notify the user
+    await update.message.reply_text("❌ سفارش لغو شد. اگر نیاز به کمک دارید، دستور /start را وارد کنید.")
     return ConversationHandler.END
 
 # === Show Orders ===
@@ -159,6 +196,71 @@ async def get_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_document(InputFile(f), filename="orders.csv")
     except FileNotFoundError:
         await update.message.reply_text("هیچ سفارشی ثبت نشده است.")
+
+# === Update Order State ===
+async def update_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.from_user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ فقط مدیر مجاز است.")
+        return
+
+    try:
+        args = context.args
+        if len(args) != 2:
+            await update.message.reply_text("❌ دستور نامعتبر است. استفاده کنید: /update_order <شماره سفارش> <وضعیت جدید>")
+            return
+
+        order_number = args[0]
+        new_state = args[1].lower()
+
+        if new_state not in ["pending", "approved", "in progress", "delivered"]:
+            await update.message.reply_text("❌ وضعیت نامعتبر است. وضعیت‌های معتبر: pending, approved, in progress, delivered")
+            return
+
+        # Update the order in the CSV file
+        updated = False
+        rows = []
+        with open("orders.csv", "r", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if row[0] == order_number:
+                    row[-1] = new_state  # Update the state
+                    updated = True
+                rows.append(row)
+
+        if updated:
+            with open("orders.csv", "w", newline='', encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerows(rows)
+            await update.message.reply_text(f"✅ وضعیت سفارش {order_number} به {new_state} تغییر یافت.")
+        else:
+            await update.message.reply_text(f"❌ سفارش با شماره {order_number} یافت نشد.")
+
+    except Exception as e:
+        await update.message.reply_text(f"❌ خطا: {e}")
+
+# === Check Order Status ===
+async def order_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        args = context.args
+        if len(args) != 1:
+            await update.message.reply_text("❌ دستور نامعتبر است. استفاده کنید: /order_status <شماره سفارش>")
+            return
+
+        order_number = args[0]
+
+        # Find the order in the CSV file
+        with open("orders.csv", "r", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if row[0] == order_number:
+                    state = row[-1]
+                    await update.message.reply_text(f"📦 وضعیت سفارش {order_number}: {state}")
+                    return
+
+        await update.message.reply_text(f"❌ سفارش با شماره {order_number} یافت نشد.")
+
+    except Exception as e:
+        await update.message.reply_text(f"❌ خطا: {e}")
 
 # === Add Flask Server ===
 flask_app = Flask(__name__)
@@ -232,7 +334,9 @@ def main():
             ],
             CHOOSING_DELIVERY: [CallbackQueryHandler(choose_delivery)],
             GETTING_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
+            GETIING_TEL_NUM: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_telephone)],
             GETTING_ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_address)],
+            CHOOSING_DATETIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_datetime)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
@@ -240,6 +344,8 @@ def main():
     app.add_handler(conv_handler)
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("orders", get_orders))
+    app.add_handler(CommandHandler("update_order", update_order))
+    app.add_handler(CommandHandler("order_status", order_status))
 
     # Set up Flask for webhook
     flask_app = Flask(__name__)
