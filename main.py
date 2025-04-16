@@ -288,6 +288,10 @@ def keep_alive():
     thread.daemon = True
     thread.start()
 
+async def delete_webhook(app):
+    await app.bot.delete_webhook()
+    print("✅ Webhook deleted successfully.")
+
 # === Main ===
 # def main():
 #     # Start Flask server in a thread (for Render)
@@ -322,6 +326,8 @@ def keep_alive():
 def main():
     # Create application
     app = ApplicationBuilder().token(BOT_TOKEN).build()
+
+    delete_webhook(app)
 
     # Add conversation handler
     conv_handler = ConversationHandler(
