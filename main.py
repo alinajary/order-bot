@@ -11,6 +11,8 @@ import csv
 import os
 from dotenv import load_dotenv
 import os
+import threading
+from flask import Flask
 
 # === CONFIGURATION ===
 load_dotenv()
@@ -153,8 +155,25 @@ async def get_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except FileNotFoundError:
         await update.message.reply_text("هیچ سفارشی ثبت نشده است.")
 
+# === Add Flask Server ===
+flask_app = Flask(__name__)
+
+@flask_app.route('/')
+def health_check():
+    return "OK", 200
+
+def run_flask():
+    port = int(os.environ.get("PORT", 8080))
+    flask_app.run(host='0.0.0.0', port=port)
+
 # === Main ===
 def main():
+    # Start Flask server in a thread (for Render)
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.daemon = True
+    flask_thread.start()
+
+    # Start Telegram bot
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     conv_handler = ConversationHandler(
