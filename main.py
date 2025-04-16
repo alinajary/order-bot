@@ -8,13 +8,14 @@ from telegram.ext import (
 )
 
 import csv
+import asyncio
 import os
+import sys
 from dotenv import load_dotenv
-import os
 import threading
 import time
 import requests
-from flask import Flask
+from flask import Flask, request
 
 # === CONFIGURATION ===
 load_dotenv()
@@ -25,6 +26,8 @@ MENU_FILE = "menu.txt"
 # === States ===
 CHOOSING_FOOD, CHOOSING_QUANTITY, CHOOSING_DELIVERY, GETTING_NAME, GETTING_ADDRESS = range(5)
 
+if sys.platform.startswith('win') and sys.version_info >= (3, 8):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 # === Start Command ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("👋 خوش آمدید! برای سفارش /order را وارد کنید.")
@@ -184,15 +187,41 @@ def keep_alive():
     thread.start()
 
 # === Main ===
+# def main():
+#     # Start Flask server in a thread (for Render)
+#     flask_thread = threading.Thread(target=run_flask)
+#     flask_thread.daemon = True
+#     flask_thread.start()
+#     keep_alive()
+#     # Start Telegram bot
+#     app = ApplicationBuilder().token(BOT_TOKEN).build()
+
+#     conv_handler = ConversationHandler(
+#         entry_points=[CommandHandler("order", start_order)],
+#         states={
+#             CHOOSING_FOOD: [CallbackQueryHandler(choose_food)],
+#             CHOOSING_QUANTITY: [
+#                 CallbackQueryHandler(choose_quantity),
+#                 MessageHandler(filters.TEXT & ~filters.COMMAND, manual_quantity)
+#             ],
+#             CHOOSING_DELIVERY: [CallbackQueryHandler(choose_delivery)],
+#             GETTING_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
+#             GETTING_ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_address)],
+#         },
+#         fallbacks=[CommandHandler("cancel", cancel)],
+#     )
+
+#     app.add_handler(conv_handler)
+#     app.add_handler(CommandHandler("start", start))
+#     app.add_handler(CommandHandler("orders", get_orders))
+#     print("🤖 Bot is running...")
+#     app.run_polling()
+
 def main():
-    # Start Flask server in a thread (for Render)
-    flask_thread = threading.Thread(target=run_flask)
-    flask_thread.daemon = True
-    flask_thread.start()
-    keep_alive()
-    # Start Telegram bot
+    # Create application
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
+    # Add conversation handler
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("order", start_order)],
         states={
@@ -211,9 +240,39 @@ def main():
     app.add_handler(conv_handler)
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("orders", get_orders))
-    print("🤖 Bot is running...")
+
+    # Set up Flask for webhook
+    flask_app = Flask(__name__)
+    webhook_url = f"https://order-bot-h9de.onrender.com/webhook"
+
+    @flask_app.route("/")
+    def health():
+        return "OK", 200
+
+    @flask_app.route("/webhook", methods=["POST"])
+    async def webhook():
+        update = Update.de_json(await request.get_json(), app.bot)
+        await app.update_queue.put(update)
+        return "OK", 200
+
+    async def set_webhook():
+        await app.bot.set_webhook(webhook_url)
+
+    # Run Flask in a separate thread
+    def run_flask():
+        flask_app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+
+    # Create a thread for Flask
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.daemon = True  # Ensure the thread stops when the program exits
+    flask_thread.start()
+
+    # Set up event loop and run the webhook asynchronously
+    loop = asyncio.get_event_loop()  # Get or create the event loop
+    loop.create_task(set_webhook())  # Create the task for the webhook setup
+
+    # Start the bot using polling (since we're running Flask in a thread)
     app.run_polling()
 
 if __name__ == "__main__":
     main()
-
