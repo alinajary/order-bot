@@ -171,12 +171,8 @@ def run_flask():
 
 def keep_alive():
     while True:
-        try:
-            # Replace with your Render URL
-            requests.get("https://your-bot.onrender.com")
-            time.sleep(300)  # Ping every 5 minutes
-        except:
-            pass
+        requests.get("https://order-bot-h9de.onrender.com")  # Ping yourself
+        time.sleep(300)  # Every 5 minutes
 
 # === Main ===
 def main():
