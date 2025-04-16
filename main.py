@@ -12,6 +12,8 @@ import os
 from dotenv import load_dotenv
 import os
 import threading
+import time
+import requests
 from flask import Flask
 
 # === CONFIGURATION ===
@@ -166,13 +168,23 @@ def run_flask():
     port = int(os.environ.get("PORT", 8080))
     flask_app.run(host='0.0.0.0', port=port)
 
+
+def keep_alive():
+    while True:
+        try:
+            # Replace with your Render URL
+            requests.get("https://your-bot.onrender.com")
+            time.sleep(300)  # Ping every 5 minutes
+        except:
+            pass
+
 # === Main ===
 def main():
     # Start Flask server in a thread (for Render)
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.daemon = True
     flask_thread.start()
-
+    threading.Thread(target=keep_alive, daemon=True).start()
     # Start Telegram bot
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
