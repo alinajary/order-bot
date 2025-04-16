@@ -170,9 +170,18 @@ def run_flask():
 
 
 def keep_alive():
-    while True:
-        requests.get("https://order-bot-h9de.onrender.com")  # Ping yourself
-        time.sleep(300)  # Every 5 minutes
+    def run():
+        while True:
+            try:
+                requests.get("https://order-bot-h9de.onrender.com")
+                print("✅ Keep-alive ping sent")
+            except Exception as e:
+                print(f"❌ Keep-alive failed: {e}")
+            time.sleep(300)  # 5 minutes
+
+    thread = threading.Thread(target=run)
+    thread.daemon = True
+    thread.start()
 
 # === Main ===
 def main():
@@ -180,7 +189,7 @@ def main():
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.daemon = True
     flask_thread.start()
-    threading.Thread(target=keep_alive, daemon=True).start()
+    keep_alive()
     # Start Telegram bot
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
@@ -207,3 +216,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
