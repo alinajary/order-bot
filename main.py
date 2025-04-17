@@ -17,6 +17,16 @@ import time
 import requests
 from flask import Flask, request
 from csv2excel import csv2excel
+import logging
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    filename="bot.log",  # Log file name
+    filemode="a"         # Append mode
+)
+logger = logging.getLogger(__name__)
+
 # === CONFIGURATION ===
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -38,10 +48,12 @@ application = ApplicationBuilder().token(BOT_TOKEN).build()
 
 # === Start Command ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"/start by user {update.effective_user.id}")
     await update.message.reply_text("👋 خوش آمدید! برای سفارش /order را وارد کنید.")
 
 # === Start Order ===
 async def start_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"Start order by user {update.effective_user.id}")
     context.user_data.clear()
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
 
@@ -60,6 +72,7 @@ async def start_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # === Choose Food ===
 async def choose_food(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"Choose food by user {update.effective_user.id}")
     query = update.callback_query
     await query.answer()
     context.user_data["food"] = query.data
@@ -73,6 +86,7 @@ async def choose_food(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # === Choose Quantity ===
 async def choose_quantity(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"Choose quantity by user {update.effective_user.id}")
     query = update.callback_query
     await query.answer()
 
@@ -91,6 +105,7 @@ async def choose_quantity(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # === Manual Quantity ===
 async def manual_quantity(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"Manual quantity by user {update.effective_user.id}")
     context.user_data["quantity"] = update.message.text
 
     keyboard = [
@@ -102,6 +117,7 @@ async def manual_quantity(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # === Choose Delivery ===
 async def choose_delivery(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"Choose delivery by user {update.effective_user.id}")
     query = update.callback_query
     await query.answer()
 
@@ -111,22 +127,26 @@ async def choose_delivery(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # === Get Name ===
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"Get name by user {update.effective_user.id}")
     context.user_data["name"] = update.message.text
     await update.message.reply_text("📍 لطفاً شماره تماس خود را وارد کنید:")
     return GETTING_TEL_NUM
 
 async def get_telephone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"Get telephone by user {update.effective_user.id}")
     context.user_data["telephone"] = update.message.text
     await update.message.reply_text("📍 لطفاً آدرس تحویل را وارد کنید:")
     return GETTING_ADDRESS
 # === Get Address + Save ===
 async def get_address(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"Get address by user {update.effective_user.id}")
     context.user_data["address"] = update.message.text
     await update.message.reply_text("📅 لطفاً تاریخ و زمان تحویل را وارد کنید (مثال: 1402/02/01 ساعت 14:00):")
     return CHOOSING_DATETIME
 
 # === Get Date and Time ===
 async def get_datetime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"Get datetime by user {update.effective_user.id}")
     context.user_data["datetime"] = update.message.text
 
     # Generate order number
@@ -189,6 +209,7 @@ async def get_datetime(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 # === Cancel ===
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"Cancel by user {update.effective_user.id}")
 # Clear user data
     context.user_data.clear()
 
@@ -198,6 +219,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # === Show Orders ===
 async def get_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"Get orders by user {update.effective_user.id}")
     if update.message.from_user.id != ADMIN_ID:
         await update.message.reply_text("⛔ فقط مدیر مجاز است.")
         return
@@ -210,6 +232,7 @@ async def get_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # === Update Order State ===
 async def update_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"Update order by user {update.effective_user.id}")
     if update.message.from_user.id != ADMIN_ID:
         await update.message.reply_text("⛔ فقط مدیر مجاز است.")
         return
@@ -247,10 +270,12 @@ async def update_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(f"❌ سفارش با شماره {order_number} یافت نشد.")
 
     except Exception as e:
+        logger.error(f"Error in update_order: {e}")
         await update.message.reply_text(f"❌ خطا: {e}")
 
 # === Check Order Status ===
 async def order_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"Order status by user {update.effective_user.id}")
     try:
         args = context.args
         if len(args) != 1:
@@ -271,6 +296,7 @@ async def order_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ سفارش با شماره {order_number} یافت نشد.")
 
     except Exception as e:
+        logger.error(f"Error in order_status: {e}")
         await update.message.reply_text(f"❌ خطا: {e}")
 
 # === Add Flask Server ===
@@ -348,7 +374,9 @@ def main():
 
     if DEV_MODE == "true":
         app.run_polling()
+        logger.info("Running in development mode")
     else:
+        logger.info("Running in production mode")
         app.run_webhook(
             listen="0.0.0.0",
             port=int(os.environ.get("PORT", 8080)),
