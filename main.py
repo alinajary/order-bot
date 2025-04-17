@@ -16,7 +16,7 @@ import threading
 import time
 import requests
 from flask import Flask, request
-
+from csv2excel import csv2excel
 # === CONFIGURATION ===
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -150,6 +150,9 @@ async def get_datetime(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
 
     # Notify Admin
+    csv_file = "orders.csv"
+    csv2excel_file = csv2excel(csv_file, "orders.xlsx")
+    csv2excel_file.convert()
     admin_msg = (
         f"📦 سفارش جدید (شماره سفارش: {order_number}):\n"
         f"👤 @{update.message.from_user.username or 'بدون نام'}\n"
@@ -192,8 +195,8 @@ async def get_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-        with open("orders.csv", "rb") as f:
-            await update.message.reply_document(InputFile(f), filename="orders.csv")
+        with open("orders.xlsx", "rb") as f:
+            await update.message.reply_document(InputFile(f), filename="orders.xlsx")
     except FileNotFoundError:
         await update.message.reply_text("هیچ سفارشی ثبت نشده است.")
 
