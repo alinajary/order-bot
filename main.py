@@ -22,16 +22,22 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 156878195  # Replace with your Telegram user ID
 MENU_FILE = "menu.txt"
-WEBHOOK_DOMAIN = os.getenv("WEBHOOK_DOMAIN")  # e.g., "https://your-app.fly.dev"
-WEBHOOK_PATH = f"/webhook/{BOT_TOKEN}"
-WEBHOOK_URL = f"{WEBHOOK_DOMAIN}{WEBHOOK_PATH}"
-DEV_MODE = os.getenv("DEV_MODE", "true").lower()
+BOT_WEBHOOK_DOMAIN = os.getenv("BOT_WEBHOOK_DOMAIN")  # e.g., "https://your-app.fly.dev"
+# WEBHOOK_URL = f"{BOT_WEBHOOK_DOMAIN}{WEBHOOK_PATH}"
+WEBHOOK_PATH = '/webhook'
+WEBHOOK_URL = 'https://68dc-93-66-64-220.ngrok-free.app/webhook'
+DEV_MODE = "false"  # Set to "true" for local development
 
 # === States ===
-CHOOSING_FOOD, CHOOSING_QUANTITY, CHOOSING_DELIVERY, GETTING_NAME, GETIING_TEL_NUM, GETTING_ADDRESS, CHOOSING_DATETIME = range(7)
+CHOOSING_FOOD, CHOOSING_QUANTITY, CHOOSING_DELIVERY, GETTING_NAME, GETTING_TEL_NUM, GETTING_ADDRESS, CHOOSING_DATETIME = range(7)
 
-if sys.platform.startswith('win') and sys.version_info >= (3, 8):
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+# Initialize Flask app
+app = Flask(__name__)
+
+# Initialize the bot application
+application = ApplicationBuilder().token(BOT_TOKEN).build()
+
+
 # === Start Command ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("👋 خوش آمدید! برای سفارش /order را وارد کنید.")
@@ -109,7 +115,7 @@ async def choose_delivery(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["name"] = update.message.text
     await update.message.reply_text("📍 لطفاً شماره تماس خود را وارد کنید:")
-    return GETIING_TEL_NUM
+    return GETTING_TEL_NUM
 
 async def get_telephone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["telephone"] = update.message.text
@@ -280,21 +286,6 @@ def run_flask():
     port = int(os.environ.get("PORT", 8080))
     flask_app.run(host='0.0.0.0', port=port)
 
-
-def keep_alive():
-    def run():
-        while True:
-            try:
-                requests.get("https://order-bot-h9de.onrender.com")
-                print("✅ Keep-alive ping sent")
-            except Exception as e:
-                print(f"❌ Keep-alive failed: {e}")
-            time.sleep(300)  # 5 minutes
-
-    thread = threading.Thread(target=run)
-    thread.daemon = True
-    thread.start()
-
 async def delete_webhook(app):
     await app.bot.delete_webhook()
     print("✅ Webhook deleted successfully.")
@@ -305,7 +296,6 @@ async def delete_webhook(app):
 #     flask_thread = threading.Thread(target=run_flask)
 #     flask_thread.daemon = True
 #     flask_thread.start()
-#     keep_alive()
 #     # Start Telegram bot
 #     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
@@ -331,12 +321,8 @@ async def delete_webhook(app):
 #     app.run_polling()
 
 def main():
-    # Create application
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    delete_webhook(app)
-
-    # Add conversation handler
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("order", start_order)],
         states={
@@ -347,11 +333,11 @@ def main():
             ],
             CHOOSING_DELIVERY: [CallbackQueryHandler(choose_delivery)],
             GETTING_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
-            GETIING_TEL_NUM: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_telephone)],
+            GETTING_TEL_NUM: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_telephone)],
             GETTING_ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_address)],
             CHOOSING_DATETIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_datetime)],
         },
-        fallbacks=[CommandHandler("cancel", cancel)],
+        fallbacks=[CommandHandler("cancel", cancel)]
     )
 
     app.add_handler(conv_handler)
@@ -360,35 +346,7 @@ def main():
     app.add_handler(CommandHandler("update_order", update_order))
     app.add_handler(CommandHandler("order_status", order_status))
 
-    # Set up Flask for webhook
-    flask_app = Flask(__name__)
-    webhook_url = f"https://order-bot-h9de.onrender.com/webhook"
-
-    @flask_app.route("/")
-    def health():
-        return "OK", 200
-
-    @flask_app.route("/webhook", methods=["POST"])
-    async def webhook():
-        update = Update.de_json(await request.get_json(), app.bot)
-        await app.update_queue.put(update)
-        return "OK", 200
-
-    async def set_webhook():
-        await app.bot.set_webhook(webhook_url)
-
-    # Run Flask in a separate thread
-    def run_flask():
-        flask_app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
-
-    # Create a thread for Flask
-    flask_thread = threading.Thread(target=run_flask)
-    flask_thread.daemon = True  # Ensure the thread stops when the program exits
-    flask_thread.start()
-
-    # Set up event loop and run the webhook asynchronously
-    loop = asyncio.get_event_loop()  # Get or create the event loop
-    loop.create_task(set_webhook())  # Create the task for the webhook setup
+    print("🤖 Bot is running...")
 
     if DEV_MODE == "true":
         app.run_polling()
@@ -396,8 +354,8 @@ def main():
         app.run_webhook(
             listen="0.0.0.0",
             port=int(os.environ.get("PORT", 8080)),
-            webhook_path=WEBHOOK_PATH,
-            webhook_url=WEBHOOK_URL
+            webhook_url=WEBHOOK_URL,
+            url_path=WEBHOOK_PATH
         )
 
 if __name__ == "__main__":

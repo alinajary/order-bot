@@ -1,9 +1,9 @@
-app = "order-bot"
+app = "order-bot-3820gq"
 
 [env]
   PORT = "8080"
   WEBHOOK_DOMAIN = "https://your-app-name.fly.dev"
-  BOT_TOKEN = "your_bot_token_here"
+  BOT_TOKEN = "7788562064:AAHlN4EvhMnpLSPXcZ39lcYM9f7Hm6c3Fas"
 
 [[services]]
   internal_port = 8080
