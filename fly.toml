@@ -3,6 +3,7 @@ app = "order-bot-3820gq"
 [env]
   PORT = "8080"
   WEBHOOK_URL = "https://order-bot-3820gq.fly.dev/webhook/7788562064:AAHlN4EvhMnpLSPXcZ39lcYM9f7Hm6c3Fas"
+  BOT_TOKEN = "7788562064:AAHlN4EvhMnpLSPXcZ39lcYM9f7Hm6c3Fas"
   DEV_MODE = "false"
 
 [[services]]

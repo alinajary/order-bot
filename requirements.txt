@@ -5,3 +5,5 @@ oauth2client
 flask
 requests
 python-telegram-bot[webhooks]
+pandas
+openpyxl
