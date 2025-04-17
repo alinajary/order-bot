@@ -1,0 +1,18 @@
+app = "order-bot"
+
+[env]
+  PORT = "8080"
+  WEBHOOK_DOMAIN = "https://your-app-name.fly.dev"
+  BOT_TOKEN = "your_bot_token_here"
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443

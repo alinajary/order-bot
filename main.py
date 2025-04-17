@@ -22,6 +22,10 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 156878195  # Replace with your Telegram user ID
 MENU_FILE = "menu.txt"
+WEBHOOK_DOMAIN = os.getenv("WEBHOOK_DOMAIN")  # e.g., "https://your-app.fly.dev"
+WEBHOOK_PATH = f"/webhook/{BOT_TOKEN}"
+WEBHOOK_URL = f"{WEBHOOK_DOMAIN}{WEBHOOK_PATH}"
+DEV_MODE = os.getenv("DEV_MODE", "true").lower()
 
 # === States ===
 CHOOSING_FOOD, CHOOSING_QUANTITY, CHOOSING_DELIVERY, GETTING_NAME, GETIING_TEL_NUM, GETTING_ADDRESS, CHOOSING_DATETIME = range(7)
@@ -386,8 +390,15 @@ def main():
     loop = asyncio.get_event_loop()  # Get or create the event loop
     loop.create_task(set_webhook())  # Create the task for the webhook setup
 
-    # Start the bot using polling (since we're running Flask in a thread)
-    app.run_polling()
+    if DEV_MODE == "true":
+        app.run_polling()
+    else:
+        app.run_webhook(
+            listen="0.0.0.0",
+            port=int(os.environ.get("PORT", 8080)),
+            webhook_path=WEBHOOK_PATH,
+            webhook_url=WEBHOOK_URL
+        )
 
 if __name__ == "__main__":
     main()
