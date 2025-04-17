@@ -22,11 +22,9 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 156878195  # Replace with your Telegram user ID
 MENU_FILE = "menu.txt"
-BOT_WEBHOOK_DOMAIN = os.getenv("BOT_WEBHOOK_DOMAIN")  # e.g., "https://your-app.fly.dev"
-# WEBHOOK_URL = f"{BOT_WEBHOOK_DOMAIN}{WEBHOOK_PATH}"
-WEBHOOK_PATH = '/webhook'
-WEBHOOK_URL = 'https://68dc-93-66-64-220.ngrok-free.app/webhook'
-DEV_MODE = "false"  # Set to "true" for local development
+WEBHOOK_PATH = os.getenv("WEBHOOK_PATH")  # e.g., "/webhook"
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Replace with your actual webhook URL
+DEV_MODE = os.getenv("DEV_MOD")  # Set to "true" for local development
 
 # === States ===
 CHOOSING_FOOD, CHOOSING_QUANTITY, CHOOSING_DELIVERY, GETTING_NAME, GETTING_TEL_NUM, GETTING_ADDRESS, CHOOSING_DATETIME = range(7)
