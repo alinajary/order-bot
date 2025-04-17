@@ -1,2 +1,5 @@
 .env
 orders.csv
+__pycache__/
+*.pyc
+.env
