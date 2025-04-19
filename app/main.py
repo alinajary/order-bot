@@ -33,12 +33,12 @@ file_path = orders_xlsx
 
 # === CONFIGURATION ===
 load_dotenv()
-# BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 ENV_PATH = os.path.join(BASE_DIR, '.env')
 load_dotenv(ENV_PATH)
 
-BOT_TOKEN = os.getenv("DEBUG_BOT_TOKEN")
+# BOT_TOKEN = os.getenv("DEBUG_BOT_TOKEN")
 ADMIN_ID = 156878195  # Replace with your Telegram user ID
 WEBHOOK_PATH = os.getenv("WEBHOOK_PATH")  # e.g., "/webhook"
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Replace with your actual webhook URL
