@@ -1,0 +1,47 @@
+{
+    "vendors": [
+        {
+            "name": "persian_food",
+            "vendor_id": 156878195,
+            "deep_link": "t.me/debug_order_bot?start=persian_food",
+            "type": "food",
+            "admins": [
+                {
+                    "first_name": "Ali",
+                    "last_name": "Najari",
+                    "id": 156878195
+                }
+            ],
+            "services": [
+                "Halim",
+                "Ash",
+                "Baghali Polo"
+            ],
+            "ask_quantity": true,
+            "ask_delivery": true,
+            "ask_datetime": true,
+            "db_name": "persian_food_db"
+        },
+        {
+            "name": "Italian_course",
+            "vendor_id": 123456788,
+            "deep_link": "t.me/debug_order_bot?start=Italian_course",
+            "type": "teaching",
+            "admins": [
+                {
+                    "first_name": "Ali",
+                    "last_name": "Najari",
+                    "id": 123456789
+                }
+            ],
+            "services": [
+                "Italian A1",
+                "Italian A2"
+            ],
+            "ask_quantity": false,
+            "ask_delivery": false,
+            "ask_datetime": false,
+            "db_name": "Italian_course_db"
+        }
+    ]
+}

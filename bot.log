@@ -1,4 +1,0 @@
-2025-04-18 00:08:35,673 - __main__ - INFO - Running in production mode
-2025-04-18 00:08:35,969 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7788562064:AAE8lngtTgFytouowKdboFPvm3N-PP92rAQ/getMe "HTTP/1.1 200 OK"
-2025-04-18 00:08:36,014 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7788562064:AAE8lngtTgFytouowKdboFPvm3N-PP92rAQ/setWebhook "HTTP/1.1 200 OK"
-2025-04-18 00:08:36,025 - telegram.ext.Application - INFO - Application started
