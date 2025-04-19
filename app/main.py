@@ -245,12 +245,29 @@ async def get_datetime(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not os.path.exists(counter_file):
         with open(counter_file, "w") as f:
             f.write("101")
+    try:
+        with open(counter_file, "r") as f:
+            order_number = int(f.read().strip())
+    except Exception as e:
+        logger.error(f"Error reading order number: {e}")
+        await update.message.reply_text("❌ خطا در ثبت سفارش. لطفاً دوباره تلاش کنید.")
+        return ConversationHandler.END
 
-    with open(counter_file, "r") as f:
-        order_number = int(f.read().strip())
-
-    with open(counter_file, "w") as f:
-        f.write(str(order_number + 1))
+    try:
+        with open(counter_file, "w") as f:
+            f.write(str(order_number + 1))
+        logger.info(f"Successfully updated order number to {order_number + 1} in {counter_file}")
+        # Optional: verify by reading back
+        with open(counter_file, "r") as f:
+            written_value = f.read().strip()
+        if written_value != str(order_number + 1):
+            logger.error(f"Order number verification failed: expected {order_number + 1}, got {written_value}")
+            await update.message.reply_text("❌ خطا در ثبت سفارش (تأیید نشد). لطفاً دوباره تلاش کنید.")
+            return ConversationHandler.END
+    except Exception as e:
+        logger.error(f"Error updating order number: {e}")
+        await update.message.reply_text("❌ خطا در ثبت سفارش. لطفاً دوباره تلاش کنید.")
+        return ConversationHandler.END
 
     # Use vendor-specific CSV file
     with open(order_file, "a", newline='', encoding="utf-8") as f:
