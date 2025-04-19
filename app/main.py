@@ -21,7 +21,7 @@ from bot_logger import BotLogger
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 DATA_DIR = os.path.join(BASE_DIR, "data")
-LOGS_DIR = os.path.join(BASE_DIR, "logs")
+LOGS_DIR = os.path.join(BASE_DIR, "data", "logs")
 MENU_FILE = os.path.join(BASE_DIR, "menu.txt")
 
 log_path = os.path.join(LOGS_DIR, 'bot.log')

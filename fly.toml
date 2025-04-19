@@ -1,19 +1,27 @@
-app = "order-bot-kbkvpq"
+app = "order-bot-kbkvpq"  # The name of your Fly.io app
 
 [env]
-  PORT = "8080"
-  WEBHOOK_URL = "https://order-bot-kbkvpq.fly.dev/webhook/7788562064:AAE8lngtTgFytouowKdboFPvm3N-PP92rAQ"
-  BOT_TOKEN = "7788562064:AAE8lngtTgFytouowKdboFPvm3N-PP92rAQ"
-  DEV_MODE = "false"
+  PORT = "8080"  # The internal port for your app
+  WEBHOOK_URL = "https://order-bot-kbkvpq.fly.dev/webhook/7788562064:AAE8lngtTgFytouowKdboFPvm3N-PP92rAQ"  # Webhook URL for your bot (make sure this is correct)
+  BOT_TOKEN = "7788562064:AAE8lngtTgFytouowKdboFPvm3N-PP92rAQ"  # Your bot token (ensure it is correct)
+  DEV_MODE = "false"  # Set to false for production
 
+# Define services for the app, including internal port and external ports
 [[services]]
-  internal_port = 8080
-  protocol = "tcp"
+  internal_port = 8080  # Port on which your app will listen internally
+  protocol = "tcp"  # Protocol type
+
+  # External port configuration
+  [[services.ports]]
+    handlers = ["http"]  # HTTP port for the app (in this case, it's port 80)
+    port = 80  # The external port (use port 80 for HTTP)
 
   [[services.ports]]
-    handlers = ["http"]
-    port = 80
+    handlers = ["tls", "http"]  # For HTTPS with TLS
+    port = 443  # The external port for secure traffic (use port 443 for HTTPS)
 
-  [[services.ports]]
-    handlers = ["tls", "http"]
-    port = 443
+# Volumes configuration (if needed)
+[[mounts]]
+  source = "order_data"  # The volume name you want to attach (ensure it's already created on Fly.io)
+  destination = "/data"  # Mount point in the container
+
