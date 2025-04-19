@@ -18,6 +18,10 @@ app = "order-bot-kbkvpq"
     handlers = ["tls", "http"]
     port = 443
 
-[[mounts]]
+[mounts]
   source = "order_data"
   destination = "/data"
+  # Add these new parameters:
+  initial_size = "1"  # in GB
+  auto_extend_size = "2"  # max size in GB
+  auto_extend_threshold = "90"  # percentage used
