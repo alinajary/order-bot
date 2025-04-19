@@ -34,7 +34,6 @@ file_path = orders_xlsx
 # === CONFIGURATION ===
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 ENV_PATH = os.path.join(BASE_DIR, '.env')
 load_dotenv(ENV_PATH)
 
@@ -307,7 +306,8 @@ async def get_datetime(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🙏 با تشکر از سفارش شما از *{vendor_name}*"
     )
     await update.message.reply_text(summary, parse_mode="Markdown")
-
+    csv2excel_file = csv2excel(orders_csv, orders_xlsx)
+    csv2excel_file.convert()
     return ConversationHandler.END
 
 # === Cancel ===
