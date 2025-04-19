@@ -47,13 +47,6 @@ DEV_MODE = os.getenv("DEV_MODE")  # Set to "true" for local development
 # === States ===
 CHOOSING_SERVICE, CHOOSING_QUANTITY, CHOOSING_DELIVERY, GETTING_NAME, GETTING_TEL_NUM, GETTING_ADDRESS, CHOOSING_DATETIME = range(7)
 
-# Initialize Flask app
-app = Flask(__name__)
-
-# Initialize the bot application
-application = ApplicationBuilder().token(BOT_TOKEN).build()
-
-
 # === Start Command ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"/start by user {update.effective_user.id}")
@@ -443,22 +436,6 @@ async def order_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error(f"Error in order_status: {e}")
         await update.message.reply_text(f"❌ خطا هنگام بررسی وضعیت سفارش:\n{e}")
-
-
-# === Add Flask Server ===
-flask_app = Flask(__name__)
-
-@flask_app.route('/')
-def health_check():
-    return "OK", 200
-
-def run_flask():
-    port = int(os.environ.get("PORT", 8080))
-    flask_app.run(host='0.0.0.0', port=port)
-
-async def delete_webhook(app):
-    await app.bot.delete_webhook()
-    print("✅ Webhook deleted successfully.")
 
 def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()

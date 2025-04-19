@@ -3,7 +3,7 @@
         {
             "name": "persian_food",
             "vendor_id": 156878195,
-            "deep_link": "t.me/debug_order_bot?start=persian_food",
+            "deep_link": "t.me/small_shop_order_bot?start=persian_food",
             "type": "food",
             "admins": [
                 {
@@ -25,7 +25,7 @@
         {
             "name": "Italian_course",
             "vendor_id": 123456788,
-            "deep_link": "t.me/debug_order_bot?start=Italian_course",
+            "deep_link": "t.me/small_shop_order_bot?start=Italian_course",
             "type": "teaching",
             "admins": [
                 {
