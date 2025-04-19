@@ -2,8 +2,6 @@ app = "order-bot-kbkvpq"
 
 [env]
   PORT = "8080"
-  WEBHOOK_URL = "https://order-bot-kbkvpq.fly.dev/webhook/7788562064:AAE8lngtTgFytouowKdboFPvm3N-PP92rAQ"
-  BOT_TOKEN = "7788562064:AAE8lngtTgFytouowKdboFPvm3N-PP92rAQ"
   DEV_MODE = "false"
 
 [[services]]
